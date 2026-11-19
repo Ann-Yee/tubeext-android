@@ -1,0 +1,50 @@
+name: Chromium B — experiment: repackage upstream APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [chromium-b]
+    paths:
+      - 'chromium-b/tools/brand_prebuilt.py'
+      - 'chromium-b/scripts/repackage-upstream.sh'
+      - '.github/workflows/chromium-b-repack.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  repackage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 85
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install required Android tools
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n1)"
+          yes | "$SDKMANAGER" --licenses || true
+          "$SDKMANAGER" 'build-tools;36.0.0' 'platforms;android-35'
+      - name: Restore permanent APK key (private GitHub secret)
+        env:
+          TUBEEXT_SIGNING_BUNDLE: ${{ secrets.TUBEEXT_SIGNING_BUNDLE }}
+        run: |
+          set -euo pipefail
+          test -n "$TUBEEXT_SIGNING_BUNDLE"
+          umask 077
+          SIGN_DIR="$RUNNER_TEMP/tubeext-signing"
+          mkdir -p "$SIGN_DIR"
+          printf '%s' "$TUBEEXT_SIGNING_BUNDLE" | base64 --decode | tar -xz -C "$SIGN_DIR"
+          test -s "$SIGN_DIR/release.p12"
+          test -s "$SIGN_DIR/signing.properties"
+          echo "TUBEEXT_SIGNING_DIR=$SIGN_DIR" >> "$GITHUB_ENV"
+      - name: Rebuild Bare-derived app package and test its signature
+        run: |
+          bash chromium-b/scripts/repackage-upstream.sh
+      - name: Upload experimental APK only if successful
+        uses: actions/upload-artifact@v4
+        with:
+          name: TubeExt-Chromium-B-experimental-arm64
+          path: dist/TubeExt-Chromium-B-experimental-arm64.apk
+          if-no-files-found: error
