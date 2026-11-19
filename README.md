@@ -1,24 +1,24 @@
-# TubeExt Android 0.2.0-alpha
+# TubeExt 0.3 — YouTube-focused GeckoView Android Browser
 
-Android YouTube-focused GeckoView browser supporting **Mozilla-signed Firefox XPI WebExtensions**.
+This project treats YouTube as a dedicated home tab **inside a real Firefox GeckoView browser**.
 
-## Improvements
-- Both navigation and utility bars at bottom. Window-inset aware status and navigation spacing.
-- Native searchable Mozilla AMO plugin market (Mozilla API v5, Android extension results): search, browse and install a signed XPI into this app. The Mozilla website alone **does not** install into GeckoView; use the native market Install button.
-- Improved plugin settings: waits for AddonManagerDelegate.onReady (extension metadata) and displays settings in its own GeckoSession overlay without replacing the YouTube page; plugin action popup fallback, WebExtension.TabDelegate handles options and tabs.
-- File Manager import via Storage Access Framework, copies content:// to a temporary file:// XPI before invoking GeckoView installer; also accepts HTTPS XPI links.
-- Larger plugin popup panel; supports enable/disable/uninstall.
+## Fixes implemented
+- Real retained GeckoSessions for browser tabs, plugin tabs, options pages and popups.
+- Handles WebExtension.TabDelegate.onNewTab, onOpenOptionsPage, SessionTabDelegate for tabs.update and tabs.remove, and navigation.onNewSession for window.open.
+- Main view switches between sessions (instead of the old temporary overlay with a blank tab).
+- Youtube shortcuts and app controls remain at bottom; browser tabs show a real URL/search field.
+- Plugin settings open as full browser tabs with moz-extension:// support when metadata gives an optionsPageUrl.
+- Extension action buttons trigger popup rendering in a real tab. No fake popup layer.
+- Native Mozilla add-on search/installation remains available; AMO detail links open in-app.
+- Signed Firefox XPI import from files and HTTPS URL supported; Chrome CRX is NOT supported.
+- Uses the user-provided YouTube logo for the launcher icon (downscaled original).
 
-## Limitations
-- Chrome .crx and unpacked unsigned extensions are NOT supported by production GeckoView.
-- A successful APK compile does not prove that all third-party plugins work, nor that Google sign-in works in embedded browsers. Device tests required.
-- The CI produces ephemeral debug-signed APKs; Android may reject updating previously installed builds due to differing signatures. In that case uninstall the old build **after exporting any extension settings**, then install the new APK.
-- This build does not support Picture-in-Picture or native background playback.
+## How to use
+At bottom: **浏览器** → enter URL / plugin site; **标签** switches and closes browser tabs.
+**插件** → installed extensions → select → **插件设置**. If no optionsPageUrl exists, TubeExt falls back to the extension action button or shows diagnostics.
+**插件** → plugin market for Mozilla-index search and XPI install.
 
-## Build
-GitHub Actions workflow on push to main, downloads at Actions -> Cloud Build APK -> Artifacts -> TubeExt-debug-apk.
-
-## Sources
-- https://mozilla.github.io/geckoview/javadoc/mozilla-central/org/mozilla/geckoview/WebExtensionController.html
-- https://mozilla.github.io/geckoview/javadoc/mozilla-central/org/mozilla/geckoview/WebExtension.TabDelegate.html
-- https://mozilla.github.io/addons-server/topics/api/addons.html
+## Limitations / verification
+Compilation by GitHub Actions is not proof of real-device functionality. Test: YouTube playback, Google login, Immersive Translate settings, XPI imports, store, web extension popup, links opening new tabs. YouTube/google may refuse Google login in an embedded browser.
+No Chrome CRX runtime. Other advanced features (downloads, media PiP, background playback) not guaranteed.
+GitHub Actions outputs a debug-signed APK; back up app data before uninstalling if debug signing changes.
