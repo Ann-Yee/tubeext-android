@@ -26,16 +26,19 @@ import org.json.JSONObject;
 /** First-party native catalog backed by Mozilla's public AMO add-on search API. */
 public final class AddonStore {
     public interface Installer { void install(String signedXpiUrl); }
+    public interface Browser { void open(String pageUrl); }
     private final Activity activity;
     private final Installer installer;
+    private final Browser browser;
     private final LinearLayout results;
     private final EditText query;
     private final AlertDialog dialog;
     private int serial = 0;
 
-    private AddonStore(Activity activity, Installer installer) {
+    private AddonStore(Activity activity, Installer installer, Browser browser) {
         this.activity = activity;
         this.installer = installer;
+        this.browser = browser;
         LinearLayout panel = new LinearLayout(activity);
         panel.setOrientation(LinearLayout.VERTICAL);
         panel.setPadding(dp(12), dp(5), dp(12), dp(4));
@@ -70,8 +73,8 @@ public final class AddonStore {
             .setPositiveButton("关闭", (d,w)-> {}).create();
     }
 
-    public static void open(Activity activity, Installer installer) {
-        AddonStore store = new AddonStore(activity, installer);
+    public static void open(Activity activity, Installer installer, Browser browser) {
+        AddonStore store = new AddonStore(activity, installer, browser);
         store.dialog.show();
         if (store.dialog.getWindow() != null)
             store.dialog.getWindow().setLayout(
@@ -207,12 +210,8 @@ public final class AddonStore {
         detail.setTextSize(12);
         actions.addView(detail, new LinearLayout.LayoutParams(0, -1, 1));
         detail.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_VIEW,
-                Uri.parse("https://addons.mozilla.org/android/addon/" + slug + "/"));
-            try { activity.startActivity(intent); }
-            catch (Exception error) {
-                Toast.makeText(activity,"无法打开浏览器",Toast.LENGTH_SHORT).show();
-            }
+            dialog.dismiss();
+            browser.open("https://addons.mozilla.org/android/addon/" + slug + "/");
         });
         results.addView(entry, new LinearLayout.LayoutParams(-1, -2));
         View divider = new View(activity);
