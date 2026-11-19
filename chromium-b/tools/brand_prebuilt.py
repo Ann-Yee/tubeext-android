@@ -19,7 +19,7 @@ def main():
     if len(matches)!=1: raise RuntimeError("Missing/ambiguous Android manifest namespace")
     ns=matches[0]+":"
     print("Android namespace:",ns)
-    m=re.search(r'<manifest\\b[^>]*\\bpackage="([^"]+)"',data)
+    m=re.search(r'<manifest\b[^>]*\bpackage="([^"]+)"',data)
     if not m or m.group(1)!="org.barebrowser":
         raise RuntimeError("Unexpected upstream APK package")
     old=m.group(1)
@@ -48,7 +48,7 @@ def main():
     for attr in ("permission","readPermission","writePermission"):
         pattern=r'('+re.escape(ns+attr)+r'=")'+re.escape(old)+r'(?=[."])'
         data=re.sub(pattern,lambda m:m.group(1)+args.package,data)
-    data=re.sub(r'('+re.escape(ns)+r'versionCode=")\\d+(")',
+    data=re.sub(r'('+re.escape(ns)+r'versionCode=")\d+(")',
         lambda m:m.group(1)+str(args.version_code)+m.group(2),data,count=1)
     data=re.sub(r'('+re.escape(ns)+r'versionName=")[^"]*(")',
         lambda m:m.group(1)+"0.1.0-chromium-b"+m.group(2),data,count=1)
@@ -62,7 +62,7 @@ def main():
     (asset/"UPSTREAM.txt").write_text(
         "TubeExt Chromium is an independent experimental derivative of Bare Browser. "
         "Its original source and BSD-3-Clause license/NOTICE: "
-        "https://github.com/BareBrowser/bare-browser. Not endorsed by Bare Browser.\\n",
+        "https://github.com/BareBrowser/bare-browser. Not endorsed by Bare Browser.\n",
         encoding="utf-8")
     print("UPSTREAM_PKG="+old)
     print("TUBEEXT_PKG="+args.package)
