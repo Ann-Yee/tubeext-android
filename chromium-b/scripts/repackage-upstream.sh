@@ -42,6 +42,22 @@ else
 fi
 java -Xmx6g -jar _repack/apktool.jar b -p _repack/framework _repack/decoded -o _repack/tubeext-unsigned.apk
 echo "::endgroup::"
+# Build a tiny Android Activity, not a WebView. It routes launcher taps to
+# YouTube inside the actual Chromium browsing activity/profile.
+mkdir -p _repack/launcher-classes _repack/launcher-dex
+javac -source 8 -target 8 \
+  -cp "$ANDROID_HOME/platforms/android-37.0/android.jar" \
+  -d _repack/launcher-classes \
+  chromium-b/native/YouTubeLauncherActivity.java
+"$ANDROID_HOME/build-tools/36.0.0/d8" \
+  --min-api 29 \
+  --lib "$ANDROID_HOME/platforms/android-37.0/android.jar" \
+  --output _repack/launcher-dex \
+  _repack/launcher-classes/app/tubeext/chromium/YouTubeLauncherActivity.class
+test -s _repack/launcher-dex/classes.dex
+cp _repack/launcher-dex/classes.dex _repack/classes3.dex
+(cd _repack && zip -q -u tubeext-unsigned.apk classes3.dex)
+echo "YouTube entry Activity compiled into classes3.dex"
 "$ANDROID_HOME/build-tools/36.0.0/zipalign" -P 16 -f -v 4 \
     _repack/tubeext-unsigned.apk _repack/tubeext-aligned.apk >/dev/null
 echo "::group::Sign package using permanent TubeExt private key"

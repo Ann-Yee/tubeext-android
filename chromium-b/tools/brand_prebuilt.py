@@ -45,7 +45,7 @@ def main():
     # The app icon launches a tiny Activity that opens YouTube through
     # Chromium's OWN ACTION_VIEW tab browser. It does not use WebView or
     # replace extension/action/settings functionality.
-    filters=re.findall(r'<intent-filter\\b[^>]*>.*?</intent-filter>',data,re.S)
+    filters=re.findall(r'<intent-filter\b[^>]*>.*?</intent-filter>',data,re.S)
     removed=0
     for filt in filters:
         if "android.intent.action.MAIN" in filt and "android.intent.category.LAUNCHER" in filt:
@@ -56,14 +56,14 @@ def main():
     start=data.find("<application")
     opener=data.find(">",start)
     if start<0 or opener<0: raise RuntimeError("No application element")
-    new_activity=('\\n        <activity '+ns+'name="app.tubeext.chromium.YouTubeLauncherActivity" '
+    new_activity=('\n        <activity '+ns+'name="app.tubeext.chromium.YouTubeLauncherActivity" '
        +ns+'exported="true" '+ns+'theme="@android:style/Theme.NoDisplay" '
-       +ns+'label="TubeExt Chromium" '+ns+'icon="@drawable/tubeext_launcher">\\n'
-       +'            <intent-filter>\\n'
-       +'                <action '+ns+'name="android.intent.action.MAIN" />\\n'
-       +'                <category '+ns+'name="android.intent.category.LAUNCHER" />\\n'
-       +'            </intent-filter>\\n'
-       +'        </activity>\\n')
+       +ns+'label="TubeExt Chromium" '+ns+'icon="@drawable/tubeext_launcher">\n'
+       +'            <intent-filter>\n'
+       +'                <action '+ns+'name="android.intent.action.MAIN" />\n'
+       +'                <category '+ns+'name="android.intent.category.LAUNCHER" />\n'
+       +'            </intent-filter>\n'
+       +'        </activity>\n')
     data=data[:opener+1]+new_activity+data[opener+1:]
     print("Launcher routing: replaced",removed,"upstream launcher intent filters")
 
