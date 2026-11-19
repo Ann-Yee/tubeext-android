@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 jobs:
-  apk:
+  release:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -17,24 +17,56 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Install Android SDK platform
+      - name: Install Android SDK
         shell: bash
         run: |
           set -euo pipefail
           SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)"
-          echo "Using $SDKMANAGER"
           test -x "$SDKMANAGER"
           yes | "$SDKMANAGER" --licenses || true
           "$SDKMANAGER" 'platforms;android-37.0' 'build-tools;36.0.0'
+
+      # The private key is deliberately NEVER committed to this public repo.
+      # Configure the one repository secret: TUBEEXT_SIGNING_BUNDLE
+      - name: Restore permanent private signing key
+        env:
+          TUBEEXT_SIGNING_BUNDLE: ${{ secrets.TUBEEXT_SIGNING_BUNDLE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$TUBEEXT_SIGNING_BUNDLE" ]]; then
+            echo "::error::Missing GitHub Actions secret TUBEEXT_SIGNING_BUNDLE. See README signing setup."
+            exit 1
+          fi
+          umask 077
+          SIGN_DIR="$RUNNER_TEMP/tubeext-signing"
+          mkdir -p "$SIGN_DIR"
+          printf '%s' "$TUBEEXT_SIGNING_BUNDLE" | base64 --decode | tar -xz -C "$SIGN_DIR"
+          test -s "$SIGN_DIR/release.p12"
+          test -s "$SIGN_DIR/signing.properties"
+          echo "TUBEEXT_SIGNING_DIR=$SIGN_DIR" >> "$GITHUB_ENV"
+
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.3.1'
-      - name: Compile APK
-        run: gradle :app:assembleDebug --no-daemon --stacktrace
-      - name: Publish APK
-        if: success()
+      - name: Compile permanently signed release APK
+        run: gradle :app:assembleRelease --no-daemon --stacktrace
+      - name: Verify APK and unchanged signing certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/release/app-release.apk"
+          APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          "$APKSIGNER" verify --verbose --print-certs "$APK" > "$RUNNER_TEMP/tubeext-verify.txt"
+          EXPECTED="BB662AE443357D13E860346205B885E670984108667666B3CDBA4896FF66057B"
+          ACTUAL="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/tubeext-verify.txt" | head -n1 | tr '[:lower:]' '[:upper:]')"
+          if [[ "$ACTUAL" != "$EXPECTED" ]]; then
+            echo "::error::APK signing certificate has changed! Refusing to publish incompatible update."
+            exit 1
+          fi
+      - name: Publish stable-release APK
         uses: actions/upload-artifact@v4
         with:
-          name: TubeExt-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: TubeExt-signed-release-apk
+          path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error

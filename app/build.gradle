@@ -1,23 +1,63 @@
 plugins { id 'com.android.application' }
+
+def signingFolder = System.getenv('TUBEEXT_SIGNING_DIR')
+def signingEnabled = signingFolder != null && !signingFolder.isEmpty()
+def signingProperties = new Properties()
+if (signingEnabled) {
+    def secretsFile = file("${signingFolder}/signing.properties")
+    def storeFilePath = file("${signingFolder}/release.p12")
+    if (!secretsFile.isFile() || !storeFilePath.isFile()) {
+        throw new GradleException("Missing TubeExt release signing files")
+    }
+    secretsFile.withInputStream { stream -> signingProperties.load(stream) }
+}
+def workflowRun = (System.getenv('GITHUB_RUN_NUMBER') ?: '0') as int
+
 android {
     namespace 'app.tubeext'
     compileSdk 37
+
     defaultConfig {
-        applicationId 'app.tubeext'
+        applicationId 'app.tubeext' // Do not change: changing this installs a second app
         minSdk 26
         targetSdk 35
-        versionCode 3
-        versionName '0.3.0-alpha'
+        // Each GitHub workflow run is a newer version: no downgrade conflicts.
+        versionCode 30000 + workflowRun
+        versionName '0.3.1'
         ndk { abiFilters 'arm64-v8a' }
     }
-    buildTypes {
-        release { minifyEnabled false }
+
+    signingConfigs {
+        if (signingEnabled) {
+            tubeextRelease {
+                storeFile file("${signingFolder}/release.p12")
+                storeType 'pkcs12'
+                storePassword signingProperties.getProperty('storePassword')
+                keyAlias signingProperties.getProperty('keyAlias')
+                keyPassword signingProperties.getProperty('keyPassword')
+            }
+        }
     }
+
+    buildTypes {
+        debug {
+            // Local debug builds cannot replace the signed release app.
+            applicationIdSuffix '.debug'
+        }
+        release {
+            minifyEnabled false
+            if (signingEnabled) {
+                signingConfig signingConfigs.tubeextRelease
+            }
+        }
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
 }
+
 dependencies {
     implementation 'org.mozilla.geckoview:geckoview:159.0.20261102144711'
 }

@@ -1,24 +1,28 @@
-# TubeExt 0.3 — YouTube-focused GeckoView Android Browser
+# TubeExt Android
 
-This project treats YouTube as a dedicated home tab **inside a real Firefox GeckoView browser**.
+YouTube-dedicated GeckoView browser with Firefox WebExtensions and add-on store.
 
-## Fixes implemented
-- Real retained GeckoSessions for browser tabs, plugin tabs, options pages and popups.
-- Handles WebExtension.TabDelegate.onNewTab, onOpenOptionsPage, SessionTabDelegate for tabs.update and tabs.remove, and navigation.onNewSession for window.open.
-- Main view switches between sessions (instead of the old temporary overlay with a blank tab).
-- Youtube shortcuts and app controls remain at bottom; browser tabs show a real URL/search field.
-- Plugin settings open as full browser tabs with moz-extension:// support when metadata gives an optionsPageUrl.
-- Extension action buttons trigger popup rendering in a real tab. No fake popup layer.
-- Native Mozilla add-on search/installation remains available; AMO detail links open in-app.
-- Signed Firefox XPI import from files and HTTPS URL supported; Chrome CRX is NOT supported.
-- Uses the user-provided YouTube logo for the launcher icon (downscaled original).
+## Updating without uninstalling (permanent APK signing)
 
-## How to use
-At bottom: **浏览器** → enter URL / plugin site; **标签** switches and closes browser tabs.
-**插件** → installed extensions → select → **插件设置**. If no optionsPageUrl exists, TubeExt falls back to the extension action button or shows diagnostics.
-**插件** → plugin market for Mozilla-index search and XPI install.
+Older APKs from 0.1 / 0.2 / 0.3 were each signed with **different ephemeral GitHub Actions debug keys**. This caused **INSTALL_FAILED_UPDATE_INCOMPATIBLE**. Because the original private signing keys were never preserved, **none of those APKs can be upgraded in place to the newly signed build**. You must uninstall the previous APK **one final time** (back up any plugin settings you can first). Future versions use a single release signing certificate.
 
-## Limitations / verification
-Compilation by GitHub Actions is not proof of real-device functionality. Test: YouTube playback, Google login, Immersive Translate settings, XPI imports, store, web extension popup, links opening new tabs. YouTube/google may refuse Google login in an embedded browser.
-No Chrome CRX runtime. Other advanced features (downloads, media PiP, background playback) not guaranteed.
-GitHub Actions outputs a debug-signed APK; back up app data before uninstalling if debug signing changes.
+New pipeline signs **release**, not **debug**, with a permanent private certificate. The package/application ID remains **app.tubeext**. Each Actions run automatically receives an increasing versionCode, so future released APKs from this workflow will update the installed app while preserving data.
+
+### One-time secure configuration (required)
+
+1. From this ChatGPT conversation, download `TubeExt-GitHub-Secret.txt` and `TubeExt-signing-backup.tar.gz`.
+2. Open [repository Actions secrets](https://github.com/Ann-Yee/tubeext-android/settings/secrets/actions) → **New repository secret**.
+3. Secret name: **TUBEEXT_SIGNING_BUNDLE**.
+4. Secret value: entire single base64 line from `TubeExt-GitHub-Secret.txt`. Save.
+5. Open **Actions → Cloud Build APK → Run workflow**. Download artifact `TubeExt-signed-release-apk` and install `app-release.apk`.
+
+⚠️ Protect `TubeExt-signing-backup.tar.gz` as a private credential (it includes the private release key and passwords). Never add it or the .txt to this public GitHub repo; never send the secret into issue comments. Keep an offline backup. The CI checks that the signing certificate fingerprint remains constant: `BB:66:2A:E4:43:35:7D:13:E8:60:34:62:05:B8:85:E6:70:98:41:08:66:76:66:B3:CD:BA:48:96:FF:66:05:7B`.
+
+No Android Studio or local compilation is required. **Until the GitHub secret is configured, Actions deliberately fails before compiling rather than generating yet another non-upgradable debug build.**
+
+## Features
+- YouTube default tab, Shorts/subscriptions/profile shortcuts.
+- Full GeckoView browser, address bar/search, tabs, extension pages and marketplace.
+- Firefox-signed XPI extensions: install via Mozilla catalog, local file or HTTPS.
+- Chrome CRX is unsupported.
+- Device testing of login/add-on compatibility is still required.
