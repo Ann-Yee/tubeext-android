@@ -25,7 +25,7 @@ jobs:
         run: |
           SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n1)"
           yes | "$SDKMANAGER" --licenses || true
-          "$SDKMANAGER" 'build-tools;36.0.0' 'platforms;android-35'
+          "$SDKMANAGER" 'build-tools;36.0.0' 'platforms;android-37.0'
       - name: Restore permanent APK key (private GitHub secret)
         env:
           TUBEEXT_SIGNING_BUNDLE: ${{ secrets.TUBEEXT_SIGNING_BUNDLE }}
