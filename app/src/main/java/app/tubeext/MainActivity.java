@@ -33,6 +33,7 @@ public final class MainActivity extends Activity {
     private static final String HOME = "https://m.youtube.com/";
     private static final String UBO = "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi";
     private static final String TRANSLATE = "https://addons.mozilla.org/firefox/downloads/latest/immersive-translate/latest.xpi";
+    private static GeckoRuntime sharedRuntime;
     private GeckoRuntime runtime;
     private GeckoSession session;
     private GeckoView pageView;
@@ -44,7 +45,8 @@ public final class MainActivity extends Activity {
         super.onCreate(state);
         getWindow().setStatusBarColor(Color.rgb(17,17,17));
         getWindow().setNavigationBarColor(Color.rgb(17,17,17));
-        runtime = GeckoRuntime.create(getApplicationContext());
+        if (sharedRuntime == null) sharedRuntime = GeckoRuntime.create(getApplicationContext());
+        runtime = sharedRuntime;
         runtime.getWebExtensionController().setPromptDelegate(new ExtensionPrompts());
 
         LinearLayout root = new LinearLayout(this);
