@@ -17,9 +17,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
-      - name: Install Android platform
+      # ubuntu-latest already ships an Android SDK; avoid the obsolete
+      # android-actions/setup-android "sdkmanager tools" installation.
+      - name: Install SDK platform and licenses
         run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
           yes | sdkmanager --licenses || true
           sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
       - uses: gradle/actions/setup-gradle@v4
