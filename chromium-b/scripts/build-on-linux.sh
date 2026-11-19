@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Full Chromium build for a large Ubuntu x86-64 cloud machine, not a free small runner.
 set -euo pipefail
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 OUT="$ROOT/dist"
 mkdir -p "$OUT"
 : "${CHROMIUM_WORKDIR:=$ROOT/_chromium-build}"
