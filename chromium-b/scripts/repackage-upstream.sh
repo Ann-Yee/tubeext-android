@@ -29,7 +29,18 @@ python3 chromium-b/tools/brand_prebuilt.py \
     _repack/decoded chromium-b/extension/icons/icon.png \
     --version-code "$((900100000 + ${GITHUB_RUN_NUMBER:-1}))"
 echo "::group::Rebuild Android resources"
-java -Xmx6g -jar _repack/apktool.jar b _repack/decoded -o _repack/tubeext-unsigned.apk
+# Bare Chromium 157 uses new API-37 Android service/zygote attributes.
+# Apktool's default bundled API-35 framework cannot resolve them.
+ANDROID37="$ANDROID_HOME/platforms/android-37.0/android.jar"
+test -s "$ANDROID37" || { echo "::error::Android API37 framework is not installed"; exit 5; }
+mkdir -p _repack/framework
+if unzip -l "$ANDROID37" | grep -q 'resources.arsc'; then
+  cp "$ANDROID37" _repack/framework/1.apk
+else
+  echo "::error::API37 android.jar has no framework resources.arsc; cannot rebuild safely."
+  exit 5
+fi
+java -Xmx6g -jar _repack/apktool.jar b -p _repack/framework _repack/decoded -o _repack/tubeext-unsigned.apk
 echo "::endgroup::"
 "$ANDROID_HOME/build-tools/36.0.0/zipalign" -P 16 -f -v 4 \
     _repack/tubeext-unsigned.apk _repack/tubeext-aligned.apk >/dev/null
