@@ -1,4 +1,4 @@
-name: Chromium B — experiment: repackage upstream APK
+name: "Chromium B — experiment: repackage upstream APK"
 on:
   workflow_dispatch:
   push:
