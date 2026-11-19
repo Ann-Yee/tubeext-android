@@ -70,6 +70,12 @@ def main():
     authority=re.escape(ns)+r'authorities="([^"]+)"'
     data=re.sub(authority,lambda m:ns+'authorities="'+m.group(1).replace(old,args.package)+'"',data)
 
+    # Bare defines custom signature permissions (e.g. .permission.DEBUG). If the
+    # fork reuses their names, it cannot coexist with official Bare Browser.
+    # Keep the namespace unique for all custom permissions and intent actions.
+    data=data.replace(old+".permission.", args.package+".permission.")
+    data=data.replace(old+".push.", args.package+".push.")
+
     for attr in ("permission","readPermission","writePermission"):
         pattern=r'('+re.escape(ns+attr)+r'=")'+re.escape(old)+r'(?=[."])'
         data=re.sub(pattern,lambda m:m.group(1)+args.package,data)
