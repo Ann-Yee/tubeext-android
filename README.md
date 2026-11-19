@@ -1,23 +1,24 @@
-# TubeExt — Android YouTube client with Firefox WebExtensions
+# TubeExt Android 0.2.0-alpha
 
-Source is a **prototype**. No claim of APK/device-tested functionality until GitHub Actions build and Android testing succeed.
+Android YouTube-focused GeckoView browser supporting **Mozilla-signed Firefox XPI WebExtensions**.
 
-## Features implemented in source
-- GeckoView-powered dedicated YouTube tab and bottom navigation
-- Firefox WebExtensions manager: install Mozilla-signed XPI, list, disable, enable, uninstall, and popup controls (best effort)
-- One-tap URLs for uBlock Origin and Immersive Translate Firefox editions
-- Android YouTube deep links and fullscreen UI
-- Local signed XPI file import
+## Improvements
+- Both navigation and utility bars at bottom. Window-inset aware status and navigation spacing.
+- Native searchable Mozilla AMO plugin market (Mozilla API v5, Android extension results): search, browse and install a signed XPI into this app. The Mozilla website alone **does not** install into GeckoView; use the native market Install button.
+- Improved plugin settings: waits for AddonManagerDelegate.onReady (extension metadata) and displays settings in its own GeckoSession overlay without replacing the YouTube page; plugin action popup fallback, WebExtension.TabDelegate handles options and tabs.
+- File Manager import via Storage Access Framework, copies content:// to a temporary file:// XPI before invoking GeckoView installer; also accepts HTTPS XPI links.
+- Larger plugin popup panel; supports enable/disable/uninstall.
 
-**This does not run Chrome .crx directly and is not a fork of Edge Canary.** Same-name Firefox extensions may differ from the Chrome variants. Popup, YouTube login and add-on behavior need device testing. YouTube login can be refused in embedded browsers. Background play, Chromecast and PiP are not implemented.
+## Limitations
+- Chrome .crx and unpacked unsigned extensions are NOT supported by production GeckoView.
+- A successful APK compile does not prove that all third-party plugins work, nor that Google sign-in works in embedded browsers. Device tests required.
+- The CI produces ephemeral debug-signed APKs; Android may reject updating previously installed builds due to differing signatures. In that case uninstall the old build **after exporting any extension settings**, then install the new APK.
+- This build does not support Picture-in-Picture or native background playback.
 
-## Cloud compile, no Android Studio
-The push-to-main workflow automatically uses the GitHub Ubuntu runner to build a debug-signed arm64 APK. See repository Actions → Cloud Build APK → latest run → Artifacts → TubeExt-debug-apk; unzip and install app-debug.apk.
+## Build
+GitHub Actions workflow on push to main, downloads at Actions -> Cloud Build APK -> Artifacts -> TubeExt-debug-apk.
 
-If a workflow fails, open its Compile APK step for the exact cause. For long-term distribution use release signing and conduct security review. Install only trusted XPI packages and review their permissions.
-
-## Source references
-- https://firefox-source-docs.mozilla.org/mobile/android/geckoview/consumer/web-extensions.html
+## Sources
 - https://mozilla.github.io/geckoview/javadoc/mozilla-central/org/mozilla/geckoview/WebExtensionController.html
-- https://addons.mozilla.org/android/addon/ublock-origin/
-- https://addons.mozilla.org/android/addon/immersive-translate/
+- https://mozilla.github.io/geckoview/javadoc/mozilla-central/org/mozilla/geckoview/WebExtension.TabDelegate.html
+- https://mozilla.github.io/addons-server/topics/api/addons.html
