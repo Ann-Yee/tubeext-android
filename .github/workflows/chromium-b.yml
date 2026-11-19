@@ -1,0 +1,59 @@
+name: Chromium B — home CRX package and source validation
+on:
+  push:
+    branches: [chromium-b]
+    paths:
+      - 'chromium-b/**'
+      - '.github/workflows/chromium-b.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  extension:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate YouTube launcher code
+        run: python3 chromium-b/tools/validate.py chromium-b/extension
+      - name: Install CRX3 signer
+        run: python3 -m pip install 'cryptography==46.0.4'
+      - name: Create CRX3 and unpacked extension ZIP
+        run: |
+          mkdir -p dist
+          python3 chromium-b/tools/pack_crx.py chromium-b/extension \
+            --zip dist/TubeExt-YouTube-Home-unpacked.zip \
+            --crx dist/TubeExt-YouTube-Home-dev.crx \
+            --verify
+          python3 -m zipfile -t dist/TubeExt-YouTube-Home-unpacked.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chromium-b-home-extension
+          path: dist/*
+          if-no-files-found: error
+
+  chromium:
+    if: ${{ github.event_name == 'workflow_dispatch' && vars.TUBEEXT_CHROMIUM_BUILDER_READY == 'true' }}
+    runs-on: [self-hosted, linux, x64, chromium-build]
+    timeout-minutes: 1440
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check large Chromium machine resources
+        run: |
+          mem_kib="$(awk '/MemTotal:/ {print $2}' /proc/meminfo)"
+          avail_kib="$(df -Pk . | awk 'NR==2 {print $4}')"
+          echo "Memory KiB: $mem_kib; available disk KiB: $avail_kib"
+          test "$mem_kib" -ge 32000000
+          test "$avail_kib" -ge 130000000
+      - name: Build Chromium source with Bare extension patches
+        run: bash chromium-b/scripts/build-on-linux.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TubeExt-Chromium-B-unsigned-apk
+          path: dist/TubeExt-Chromium-B-unsigned.apk
+          if-no-files-found: error

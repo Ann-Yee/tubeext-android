@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TubeExt · YouTube</title><link rel="stylesheet" href="style.css"></head>
+<body><main><header><img src="icons/icon.png" alt="TubeExt"><div><b>TubeExt</b><small>Chromium · Chrome 扩展版 · 方案 B</small></div></header>
+<section class="panel"><div class="headline">YouTube</div>
+<p class="muted">YouTube 专用入口，同时保留 Chromium 的完整标签页、地址栏、Chrome 扩展管理和插件弹窗。</p>
+<div class="actions">
+<a class="primary" href="https://m.youtube.com/">▶ 首页</a>
+<a href="https://m.youtube.com/shorts">Shorts</a>
+<a href="https://m.youtube.com/feed/subscriptions">订阅</a>
+<a href="https://m.youtube.com/feed/you">我的</a>
+<a href="https://m.youtube.com/feed/history">观看记录</a>
+<a href="https://www.youtube.com/feed/playlists">播放列表</a>
+<button id="extensions">管理插件</button>
+<button id="market">Chrome 插件商店</button>
+</div>
+<p class="tip">安装 CRX：浏览器的「扩展程序」→「安装 CRX」，或者 Chrome 网上应用店。QuickVideo v0.7 使用其原版 CRX，无需转换 XPI。</p></section>
+<section class="panel"><label for="search">搜索 YouTube</label><input id="search" type="search" placeholder="搜索视频、频道或播放列表">
+<button class="primary" id="go" style="width:100%;margin-top:12px">搜索</button></section>
+<footer>保留浏览器功能 · 浏览器地址栏/底部工具栏由 Chromium 提供</footer>
+</main><script src="home.js"></script></body></html>

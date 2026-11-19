@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "TubeExt YouTube Home",
+  "description": "YouTube-oriented home and quick controls for TubeExt Chromium. All Chrome extensions remain managed by the browser.",
+  "version": "0.1.0",
+  "permissions": ["tabs", "storage"],
+  "chrome_url_overrides": {"newtab": "newtab.html"},
+  "action": {"default_title": "TubeExt", "default_popup": "popup.html"},
+  "options_page": "options.html",
+  "background": {"service_worker": "background.js"}
+}
