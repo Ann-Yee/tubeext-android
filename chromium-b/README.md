@@ -1,6 +1,6 @@
 # TubeExt Chromium B — real CRX architecture (development)
 
-Status: **Source and Chrome-extension test harness implemented; custom Chromium APK NOT yet built**.
+Status: **Experimental TubeExt-branded Chromium B APK built and signed from the official Bare Browser 2.0.7 binary.** This is a derivative *repackage*, **not** a full compile of the Chromium source and **not** a verified working release. The full source-build script remains unexecuted without >=32GB RAM and >=100GB build storage. See the test notes below.
 
 This is a separate branch (`chromium-b`) so the installed stable GeckoView version remains unchanged.
 
@@ -41,3 +41,13 @@ The native job currently produces an unsigned APK for build feasibility; signing
 - YouTube/Google login, Shorts, media controls, background play and CRX plugins must be tested on a physical Android device.
 - Original Chrome CRX has its own API compatibility constraints even in an extension-capable Chromium fork.
 - Upstream license: BSD-3-Clause; preserve its attribution when building. Do not misrepresent your build as official Bare Browser.
+
+## Experimental binary APK, November 19 2026
+
+- Signed build: https://github.com/Ann-Yee/tubeext-android/actions/runs/44497314116
+- Android package: `app.tubeext.chromium`, separate from GeckoView `app.tubeext` and upstream Bare `org.barebrowser`.
+- Installation artifacts were created using the existing protected TubeExt release signing secret; signature and package label verified in CI.
+- This APK has the user YouTube icon and a small Java launcher routing home-screen taps to `https://m.youtube.com/` through Chromium's ACTION_VIEW handler. It inherits Chrome extension and CRX capability from Bare's Chromium engine.
+- The preceding build was emulator smoke-tested. **It crashed under x86_64 emulator ARM native-bridge translation.** The **unmodified official Bare 2.0.7 APK crashed with the same SIGSEGV** in that emulator (control run https://github.com/Ann-Yee/tubeext-android/actions/runs/44496727294). Thus the emulator results cannot establish whether the repack works on a real ARM64 device. An Android ARM64 device test is needed.
+- Repacking has known compatibility risks (Chromium process/package naming, native resource access, extensions). It must not be distributed as a stable product until actual device launch + YouTube video + Google login + CRX + extension options are tested.
+- Proprietary branding and signing of the upstream Bare package are not claimed; this derivative maintains attribution to upstream.
