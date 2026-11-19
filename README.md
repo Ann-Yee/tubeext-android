@@ -26,3 +26,7 @@ No Android Studio or local compilation is required. **Until the GitHub secret is
 - Firefox-signed XPI extensions: install via Mozilla catalog, local file or HTTPS.
 - Chrome CRX is unsupported.
 - Device testing of login/add-on compatibility is still required.
+
+## Release status
+
+Permanent signing has been configured in GitHub Actions by the repository owner. The next successful `Cloud Build APK` artifact is the signed release. Install only that artifact for future in-place updates.
