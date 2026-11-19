@@ -22,7 +22,9 @@ jobs:
       - name: Validate YouTube launcher code
         run: python3 chromium-b/tools/validate.py chromium-b/extension
       - name: Install CRX3 signer
-        run: python3 -m pip install 'cryptography==46.0.4'
+        run: python3 -m pip install 'cryptography==46.0.4' 'Pillow==12.0.0'
+      - name: Verify Android launcher logo branding logic
+        run: python3 chromium-b/tools/test_brand.py
       - name: Create CRX3 and unpacked extension ZIP
         run: |
           mkdir -p dist
