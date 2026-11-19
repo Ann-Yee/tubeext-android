@@ -72,7 +72,7 @@ def main():
     a.crx.write_bytes(crx)
     if a.verify:
         raw=a.crx.read_bytes()
-        assert raw.startswith(b"Cr24")+struct.pack("<I",3)
+        assert raw.startswith(b"Cr24"+struct.pack("<I",3))
         header_len=struct.unpack("<I",raw[8:12])[0]
         assert raw[12+header_len:]==archive
         with zipfile.ZipFile(io.BytesIO(archive)) as z:
