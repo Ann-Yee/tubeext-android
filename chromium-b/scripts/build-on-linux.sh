@@ -19,7 +19,12 @@ if [[ ! -d "$UPSTREAM/.git" ]]; then
   git clone --depth 1 https://github.com/BareBrowser/bare-browser.git "$UPSTREAM"
 fi
 # Pin Chromium to the build guide's known-tested revision to match Bare patches.
-CHROMIUM_COMMIT="800628ad1ca1fd0c51e3b43b5b2bca081e81c3f6"
+CHROMIUM_COMMIT="$(sed -n 's/^- Chromium commit: \\([0-9a-f]\\{40\\}\\).*/\\1/p' "$UPSTREAM/BUILDING.md" | head -n 1)"
+if [[ ! "$CHROMIUM_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+  echo "Could not read the pinned Chromium revision from Bare BUILDING.md" >&2
+  exit 3
+fi
+echo "Pinning Chromium $CHROMIUM_COMMIT"
 TOOLCHAIN="$CHROMIUM_WORKDIR/depot_tools"
 if [[ ! -d "$TOOLCHAIN/.git" ]]; then
   git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git "$TOOLCHAIN"
@@ -34,6 +39,7 @@ cd src
 git checkout "$CHROMIUM_COMMIT"
 gclient sync -D --force --reset
 ./build/install-build-deps.sh --android
+sudo apt-get update && sudo apt-get install -y python3-pil
 
 # Applying the upstream patch series once; fail on changed/unmatched Chromium.
 if [[ ! -e "$CHROMIUM_WORKDIR/.bare-patches-applied" ]]; then
