@@ -92,4 +92,5 @@ echo "::endgroup::"
 "$ANDROID_HOME/build-tools/36.0.0/aapt2" dump badging \
     dist/TubeExt-Chromium-B-experimental-arm64.apk | grep -E "^(package:|application-label|launchable-activity)" | head -n 12
 du -h dist/*.apk
-echo "Chromium-B binary experiment APK created. NOT confirmed to function on Android yet."
+echo "::warning::LEGACY/QUARANTINED APK. Signatures and zipalign do not establish Chromium runtime compatibility."
+echo "::warning::No APK artifact will be published. Full Chromium source compile and ARM64 testing are required."

@@ -59,9 +59,23 @@ with zipfile.ZipFile(original) as a, zipfile.ZipFile(modified) as b:
     print("\n".join(lines[:80]))
     # Don't mask differences in compiled Chromium resources: they can encode
     # native resource IDs, and APKTool has not been validated to preserve them.
+    removed_resources=[x for x in missing if x.startswith("res/")]
+    added_resources=[x for x in added if x.startswith("res/")]
+    if removed_resources or added_resources:
+        lines += ["", "### Native resource path breakage",
+                  f"Removed Android compiled resource paths: {len(removed_resources)}",
+                  f"Added Android compiled resource paths: {len(added_resources)}",
+                  "Repackaging has changed the Android compiled resource namespace.",
+                  "Native Chromium and compiled Java resource IDs may no longer resolve."]
+        out.write_text("\n".join(lines)+"\n", encoding="utf-8")
+        print(f"BLOCKING: resource paths renamed: removed={len(removed_resources)}, added={len(added_resources)}")
+        sys.exit(12)
     if diff["Android compiled resources"]>10:
         print("BLOCKING: many compiled Android resources altered by repackaging")
         sys.exit(12)
+    if "resources.arsc" in bad:
+        print("BLOCKING: resources.arsc was recompiled; native resource ID mapping unverified")
+        sys.exit(15)
     if diff["native libraries"]>0:
         print("BLOCKING: native library bytes changed")
         sys.exit(13)

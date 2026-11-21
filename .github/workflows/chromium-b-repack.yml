@@ -1,12 +1,6 @@
-name: "Chromium B — experiment: repackage upstream APK"
+name: "Chromium B — quarantined APK repack diagnostic"
 on:
   workflow_dispatch:
-  push:
-    branches: [chromium-b]
-    paths:
-      - 'chromium-b/tools/brand_prebuilt.py'
-      - 'chromium-b/scripts/repackage-upstream.sh'
-      - '.github/workflows/chromium-b-repack.yml'
 
 permissions:
   contents: read
@@ -42,9 +36,10 @@ jobs:
       - name: Rebuild Bare-derived app package and test its signature
         run: |
           bash chromium-b/scripts/repackage-upstream.sh
-      - name: Upload experimental APK only if successful
-        uses: actions/upload-artifact@v4
-        with:
-          name: TubeExt-Chromium-B-experimental-arm64
-          path: dist/TubeExt-Chromium-B-experimental-arm64.apk
-          if-no-files-found: error
+      # NEVER publish an untested APK as a usable app.
+      # The CI run verifies structural signing only and is NOT device certification.
+      - name: Warn about unsafe binary repack
+        if: always()
+        run: |
+          echo "::warning::Do not install/upload binary repacks. This pipeline is quarantined."
+          echo "Use a full source build and pass native ARM64 smoke tests first."
