@@ -1,0 +1,48 @@
+name: "Chromium B — ARM64 guest startup diagnosis (not release)"
+on:
+  push:
+    branches: [chromium-b]
+    paths:
+      - '.github/workflows/chromium-b-arm64-guest.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  native-arm64:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 44497314116
+          name: TubeExt-Chromium-B-experimental-arm64
+          path: dist
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Fetch official Bare ARM64 control APK
+        run: |
+          curl -fL --retry 3 --silent --show-error -o dist/Bare-2.0.7-arm64-v8a.apk https://github.com/BareBrowser/bare-browser/releases/download/v2.0.7/Bare-2.0.7-arm64-v8a.apk
+          curl -fL --retry 3 --silent --show-error -o dist/SHA256SUMS.txt https://github.com/BareBrowser/bare-browser/releases/download/v2.0.7/SHA256SUMS.txt
+          (cd dist && sha256sum --check --ignore-missing SHA256SUMS.txt)
+      - name: Boot ARM64 Android 11 emulator without translation and compare
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_apis
+          arch: arm64-v8a
+          profile: pixel_5
+          cores: 4
+          ram-size: 4096M
+          heap-size: 512M
+          emulator-boot-timeout: 1800
+          emulator-options: -accel off -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          disable-animations: true
+          script: bash chromium-b/scripts/diff-smoke.sh
+      - name: Save startup traces even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tubeext-arm64-guest-startup-report
+          path: test-output/
+          if-no-files-found: ignore
