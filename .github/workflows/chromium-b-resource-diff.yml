@@ -1,0 +1,41 @@
+name: "Chromium B — compare official native resources and repackaging"
+on:
+  push:
+    branches: [chromium-b]
+    paths:
+      - 'chromium-b/tools/apk_diff.py'
+      - '.github/workflows/chromium-b-resource-diff.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+jobs:
+  diff:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download our experimental APK
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 44497314116
+          name: TubeExt-Chromium-B-experimental-arm64
+          path: dist
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download original signed release
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L -f --retry 3 -o dist/Bare-2.0.7-arm64-v8a.apk "https://github.com/BareBrowser/bare-browser/releases/download/v2.0.7/Bare-2.0.7-arm64-v8a.apk"
+          curl -L -f --retry 3 -o dist/SHA256SUMS.txt "https://github.com/BareBrowser/bare-browser/releases/download/v2.0.7/SHA256SUMS.txt"
+          (cd dist && sha256sum --check SHA256SUMS.txt --ignore-missing)
+      - name: Detect broken compiled resources and different binary payloads
+        run: python3 chromium-b/tools/apk_diff.py dist/Bare-2.0.7-arm64-v8a.apk dist/TubeExt-Chromium-B-experimental-arm64.apk test-output/apk_diff.md
+      - name: Publish resource integrity report even if validation fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TubeExt-Chromium-B-resource-integrity
+          path: test-output/
+          if-no-files-found: error
