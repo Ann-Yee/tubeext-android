@@ -1,3 +1,22 @@
+# ⚠️ Chromium B experimental APK is NOT safe to recommend for installation
+
+**STOP: previous `TubeExt-Chromium-B-experimental-arm64.apk` artifacts must not be treated as stable or finished.**
+
+**Why:** A verified binary comparison against the original Bare 2.0.7 APK (November 21, 2026) found that the APKTool repack **renamed/discarded the original paths of 3,923 Android compiled resources and created 3,924 new paths**, while it regenerated `resources.arsc` from 30,688,588 bytes to 31,378,468 bytes. The native `libchrome.so` and Java DEX payloads remained byte-identical. The Chromium runtime may still refer to compiled resources and app identity from its original build, so binary repackaging is an unsafe approach. This is a **verified packaging fault**, but the user's specific real-device crash root has not yet been proven without their ARM64 crash log. See [structural rejection CI](https://github.com/Ann-Yee/tubeext-android/actions/runs/44925413592).
+
+The prior x86_64 emulator translates ARM64 code and produced a SIGSEGV for *both* unmodified upstream Bare and TubeExt, so that emulator cannot establish a unique TubeExt cause. See [A/B emulator control](https://github.com/Ann-Yee/tubeext-android/actions/runs/44496727294).
+
+**Policy now:** legacy repackage output is quarantined and no longer uploaded. Do **not** claim a passing APK merely because APKTool, zipalign, apksigner, manifest parsing or ZIP checks succeed. No replacement will be distributed as a finished TubeExt until:
+1. Chromium source + compatible extension patches are built without APKTool rewriting.
+2. TubeExt application identity, resource IDs, native assets, launcher, first-run UI and extension support are set at source compile time.
+3. APK is signed with the permanent key, installed and launched on actual ARM64 Android 10–16, with no startup native crashes.
+4. Chrome Web Store/CRX, QuickVideo v0.7 extension popup/options, page loading, YouTube playback and tab navigation are exercised.
+5. Update from previous same-signed Chromium B build preserves browser data.
+
+**Current blocker:** Bare's documented source build needs 32GB RAM and ~100GB disk; the default GitHub-hosted Ubuntu runner only has 16GB RAM/14GB SSD. No suitable large build runner is connected to this repository. The source build configuration remains in `chromium-b/scripts/build-on-linux.sh` and `.github/workflows/chromium-b.yml`, but has not been completed.
+
+---
+
 # TubeExt Chromium B — real CRX architecture (development)
 
 Status: **Experimental TubeExt-branded Chromium B APK built and signed from the official Bare Browser 2.0.7 binary.** This is a derivative *repackage*, **not** a full compile of the Chromium source and **not** a verified working release. The full source-build script remains unexecuted without >=32GB RAM and >=100GB build storage. See the test notes below.
