@@ -27,9 +27,9 @@ lines=["# APK repack integrity comparison", "", f"Original: {original.stat().st_
 with zipfile.ZipFile(original) as a, zipfile.ZipFile(modified) as b:
     an={x.filename:x for x in a.infolist()}
     bn={x.filename:x for x in b.infolist()}
-    common=sorted(set(an)&set(b))
-    missing=sorted(set(an)-set(b))
-    added=sorted(set(bn)-set(a))
+    common=sorted(set(an)&set(bn))
+    missing=sorted(set(an)-set(bn))
+    added=sorted(set(bn)-set(an))
     bad=[]
     same=[]
     diff=collections.Counter()
