@@ -1,0 +1,86 @@
+name: Build Codex Android Chinese APK
+on:
+  push:
+    branches: [codex-cn-20261124]
+    paths:
+      - "custom-codex-cn/**"
+      - ".github/workflows/build-codex-cn.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build-codex:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch upstream GPL source at pinned v0.4.0
+        run: git clone --depth 1 --branch v0.4.0 https://github.com/nokryong/mobile-codex.git codex-src
+      - name: Fetch published matching Android runtime
+        run: |
+          curl --fail --location --retry 3 --proto '=https' --proto-redir '=https' \
+            -o "$RUNNER_TEMP/mobile-codex-v0.4.0.apk" \
+            https://github.com/nokryong/mobile-codex/releases/download/v0.4.0/mobile-codex-0.4.0-arm64.apk
+          unzip -tq "$RUNNER_TEMP/mobile-codex-v0.4.0.apk"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+          cache-dependency-path: |
+            codex-src/build.gradle
+            codex-src/app/build.gradle
+            codex-src/gradle/wrapper/gradle-wrapper.properties
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: "platforms;android-35 build-tools;35.0.0"
+          log-accepted-android-sdk-licenses: false
+      - name: Restore bundled Android tools, customize source
+        run: |
+          python3 custom-codex-cn/patch.py codex-src "$RUNNER_TEMP/mobile-codex-v0.4.0.apk"
+          test -s codex-src/app/src/main/assets/devtools/payload.zip
+          test -s codex-src/app/src/main/jniLibs/arm64-v8a/libcodex.so
+      - name: Compile independent APK
+        working-directory: codex-src
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon --stacktrace assembleRelease
+      - name: Create locally signed release APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOOLS="$ANDROID_HOME/build-tools/35.0.0"
+          mkdir -p dist
+          PASSWORD="$(openssl rand -hex 24)"
+          keytool -genkeypair -alias codexcn -keyalg RSA -keysize 3072 -validity 3650 \
+            -keystore "$RUNNER_TEMP/codex-cn.jks" -storepass "$PASSWORD" -keypass "$PASSWORD" \
+            -dname "CN=Codex CN Independent Build, OU=Android, O=Community, C=US" -noprompt
+          "$TOOLS/zipalign" -p -f 4 codex-src/app/build/outputs/apk/release/app-release-unsigned.apk "$RUNNER_TEMP/codex-cn-aligned.apk"
+          "$TOOLS/apksigner" sign --ks "$RUNNER_TEMP/codex-cn.jks" --ks-key-alias codexcn \
+            --ks-pass "pass:$PASSWORD" --key-pass "pass:$PASSWORD" \
+            --out dist/Codex-CN-0.4.0-arm64.apk "$RUNNER_TEMP/codex-cn-aligned.apk"
+          "$TOOLS/apksigner" verify --verbose --print-certs dist/Codex-CN-0.4.0-arm64.apk
+          sha256sum dist/Codex-CN-0.4.0-arm64.apk > dist/SHA256SUMS.txt
+          cp codex-src/LICENSE dist/UPSTREAM-GPL-3.0.txt
+          cp codex-src/THIRD_PARTY_NOTICES.md dist/THIRD_PARTY_NOTICES.md
+          cp custom-codex-cn/README.md dist/README_CN.md
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Codex-CN-APK
+          path: dist/
+          compression-level: 0
+          retention-days: 30
+      - name: Publish downloadable APK as an isolated prerelease
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create codex-cn-v0.4.0-1 dist/Codex-CN-0.4.0-arm64.apk \
+            dist/SHA256SUMS.txt dist/UPSTREAM-GPL-3.0.txt \
+            dist/THIRD_PARTY_NOTICES.md dist/README_CN.md \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Codex 手机助手 CN 0.4.0 — 独立安卓构建" \
+            --notes "基于 nokryong/mobile-codex v0.4.0 (GPL-3.0) 的第三方中文定制版。独立包名 app.annyee.codexcn；支持 ChatGPT 登录、Codex、Android 无障碍手机控制、使用额度和官方 Credits 查询入口。现为部分简体中文翻译，尚未集成 Shizuku。此版采用一次性构建密钥签名，未来更新需卸载旧版；不要将此版本误认为 OpenAI 官方应用。" \
+            --prerelease
